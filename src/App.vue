@@ -1,10 +1,27 @@
 <template>
-  <div id="app">
+  <div id="app" class="app-layout">
     <Header />
-    <router-view />
+    <main class="main-content">
+      <router-view />
+    </main>
     <Footer />
   </div>
-</template>
+ </template>
+
+<style scoped>
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 90px; /* Prevent footer overlap */
+}
+</style>
+
 
 <script>
 import Header from './components/Header.vue';
