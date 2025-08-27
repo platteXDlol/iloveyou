@@ -1,16 +1,28 @@
 <template>
-  <div class="p-8">
-    <h1 class="text-4xl font-bold text-gray-800">Home Page</h1>
-    <p class="mt-4 text-lg text-gray-600">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-    </p>
-    <div class="mt-8">
-      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Click Me
-      </button>
-      <button class="ml-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-        Another Button
-      </button>
+    <div class="flex flex-col items-center justify-center text-center p-4 sm:p-6 md:p-8">
+        <div class="max-w-2xl">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-purple-500">
+                Welcome to <span class="text-sky-500">I Love You</span>
+            </h1>
+            <p class="mt-6 text-lg text-gray-600">
+                This is your special place to track relationship milestones, play games, and discover new adventures together. Keep the spark alive and celebrate your journey, one day at a time.
+            </p>
+            <div class="mt-10">
+                <router-link 
+                    to="/dashboard" 
+                    class="py-3 px-8 bg-gradient-to-r from-purple-500 to-sky-500 text-white rounded-full text-lg font-bold hover:from-sky-500 hover:to-purple-500 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                    View Your Dashboard
+                </router-link>
+            </div>
+        </div>
     </div>
-  </div>
 </template>
+
+<script setup>
+// No script logic needed for this simple static page
+</script>
+
+<style scoped>
+/* You can add scoped styles here if needed, but for this page, Tailwind is sufficient. */
+</style>
