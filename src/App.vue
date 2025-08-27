@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="app-layout">
     <Header />
-    <main class="main-content">
+    <main class="main-content py-8">
       <router-view />
     </main>
     <Footer />
