@@ -26,4 +26,4 @@ dist-ssr
 # Help Private
 README_PRIVATE.md
 .env
-supabase.js
+.vscode/
