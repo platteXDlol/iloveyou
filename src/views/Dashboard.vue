@@ -1,5 +1,5 @@
 <template>
-    <div class="p-4 sm:p-6 md:p-8">
+    <div class="min-h-screen p-4 sm:p-6 md:p-8 bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             <!-- Together Card -->

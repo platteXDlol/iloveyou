@@ -8,12 +8,19 @@
             <router-link to="/game" class="nav-link">Game</router-link>
             <router-link to="/profile" class="nav-link">Profile</router-link>
             <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
+            <router-link to="/login" class="nav-link">Login</router-link>
+            <router-link to="/register" class="nav-link">Register</router-link>
         </div>
         <div class="header-right">
-            <button class="profile-btn" aria-label="Profile"></button>
+            <router-link to="/profile">
+                <button class="profile-btn" aria-label="Profile"></button>
+            </router-link>
         </div>
     </nav>
 </template>
+
+
+
 
 <style scoped>
 .main-header {

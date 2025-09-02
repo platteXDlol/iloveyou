@@ -1,6 +1,6 @@
 <template>
-    <div class="flex flex-col items-center justify-center text-center p-4 sm:p-6 md:p-8">
-        <div class="max-w-2xl">
+    <div class="flex flex-col items-center justify-center text-center min-h-screen p-4 sm:p-6 md:p-8 bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100">
+    <div class="max-w-2xl bg-white rounded-3xl shadow-2xl p-8 sm:p-12 border border-purple-100">
             <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-purple-500">
                 Welcome to <span class="text-sky-500">I Love You</span>
             </h1>

@@ -1,110 +1,121 @@
-import { ref, computed } from 'vue';
-
-const allTasks = [
-    "Give your partner a compliment.",
-    "Share a favorite memory you have together.",
-    "Tell your partner something you admire about them.",
-    "Plan a dream date night together.",
-    "What's one thing you're grateful for about your partner?",
-    "Give your partner a 60-second massage.",
-    "Sing a song for your partner.",
-    "Make your partner laugh.",
-    "Tell a joke.",
-    "Stare into each other's eyes for 30 seconds.",
-];
+import { ref, reactive, computed } from 'vue';
+import { supabase } from '../supabase';
 
 export function useGame() {
+    // Game State
     const gameState = ref('not_started'); // 'not_started', 'in_progress'
-    const players = ref([{ name: '' }, { name: '' }]);
-    const currentPlayerIndex = ref(0);
-    const levels = ref([
-        { id: 1, unlocked: true, tasksCompleted: 0 },
-        { id: 2, unlocked: false, tasksCompleted: 0 },
-        { id: 3, unlocked: false, tasksCompleted: 0 },
-        { id: 4, unlocked: false, tasksCompleted: 0 },
-        { id: 5, unlocked: false, tasksCompleted: 0 },
-    ]);
-    const activeLevel = ref(null);
-    const currentTask = ref('');
-    const differentTaskCounter = ref(0);
+    const loading = ref(false);
+    const error = ref(null);
 
-    const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
-    const unlockedLevels = computed(() => levels.value.filter(level => level.unlocked));
-    const lockedLevels = computed(() => levels.value.filter(level => !level.unlocked));
+    // Player Management
+    const players = reactive([{ name: '' }, { name: '' }]);
+    const currentPlayerIndex = ref(0);
+    const currentPlayer = computed(() => players[currentPlayerIndex.value]);
+
+    // Level Management
+    const totalLevels = 5;
+    const activeLevel = ref(null); // The level number currently being played, e.g., 1, 2, ...
+    const tasksCompletedThisLevel = ref(0);
+
+    // Task Management
+    const tasksForCurrentLevel = ref([]);
+    const currentTask = ref('');
+
+    // --- DATABASE FUNCTIONS ---
+
+    async function fetchTasksForLevel(levelId) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const { data, error: dbError } = await supabase.from('flirty_game').select('text').eq('level', levelId);
+            if (dbError) throw dbError;
+            tasksForCurrentLevel.value = data.map(t => t.text);
+            if (tasksForCurrentLevel.value.length === 0) {
+                throw new Error(`No tasks found for level ${levelId}.`);
+            }
+        } catch (e) {
+            error.value = `Failed to fetch tasks: ${e.message}`;
+            console.error(error.value);
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    // --- HELPER FUNCTIONS ---
+
+    function getNewRandomTask() {
+        if (tasksForCurrentLevel.value.length === 0) {
+            currentTask.value = "No tasks available for this level.";
+            return;
+        }
+        const randomIndex = Math.floor(Math.random() * tasksForCurrentLevel.value.length);
+        currentTask.value = tasksForCurrentLevel.value[randomIndex];
+    }
+
+    function switchPlayer() {
+        currentPlayerIndex.value = (currentPlayerIndex.value + 1) % players.length;
+    }
+
+    // --- GAME ACTIONS ---
 
     function startGame() {
-        if (players.value[0].name && players.value[1].name) {
-            currentPlayerIndex.value = Math.floor(Math.random() * 2);
+        if (players[0].name && players[1].name) {
+            currentPlayerIndex.value = 0;
             gameState.value = 'in_progress';
         } else {
-            alert('Please enter both player names to start the game.');
+            alert('Please enter names for both players.');
         }
     }
 
     function restartGame() {
         gameState.value = 'not_started';
-        levels.value.forEach((level, index) => {
-            level.unlocked = index === 0;
-            level.tasksCompleted = 0;
-        });
+        players[0].name = '';
+        players[1].name = '';
         activeLevel.value = null;
+        tasksCompletedThisLevel.value = 0;
         currentTask.value = '';
-        players.value = [{ name: '' }, { name: '' }];
     }
 
-    function selectLevel(level) {
-        activeLevel.value = level;
-        getNewTask();
+    async function selectLevel(levelNumber) {
+        activeLevel.value = levelNumber;
+        tasksCompletedThisLevel.value = 0;
+        await fetchTasksForLevel(levelNumber);
+        getNewRandomTask();
     }
 
     function backToLevels() {
         activeLevel.value = null;
     }
 
-    function getNewTask() {
-        let newTask = currentTask.value;
-        while (newTask === currentTask.value) {
-            const randomIndex = Math.floor(Math.random() * allTasks.length);
-            newTask = allTasks[randomIndex];
-        }
-        currentTask.value = newTask;
-    }
-
     function handleDone() {
-        if (!activeLevel.value) return;
-
-        activeLevel.value.tasksCompleted++;
-        currentPlayerIndex.value = (currentPlayerIndex.value + 1) % 2;
-
-        if (activeLevel.value.tasksCompleted >= 4) {
-            const currentLevelId = activeLevel.value.id;
-            if (currentLevelId < levels.value.length) {
-                levels.value[currentLevelId].unlocked = true;
-            }
-            
-            
-            
-            activeLevel.value = null;
-            alert(`Congratulations, ${currentPlayer.value.name}! You completed Level ${currentLevelId}.`);
-
+        tasksCompletedThisLevel.value++;
+        if (tasksCompletedThisLevel.value >= 4) {
+            // Level complete, go back to level selection
+            activeLevel.value = null; 
         } else {
-            getNewTask();
+            // Next task
+            switchPlayer();
+            getNewRandomTask();
         }
     }
 
     function handleDifferentTask() {
-        differentTaskCounter.value++;
-        getNewTask();
+        getNewRandomTask();
     }
 
     return {
+        // State
         gameState,
         players,
         currentPlayer,
-        unlockedLevels,
-        lockedLevels,
+        totalLevels,
         activeLevel,
+        tasksCompletedThisLevel, // For the UI: "Task X of 4"
         currentTask,
+        loading,
+        error,
+
+        // Actions
         startGame,
         restartGame,
         selectLevel,
