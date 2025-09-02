@@ -1,28 +1,100 @@
 <template>
-    <nav class="main-header">
-        <div class="header-left">
-            <span class="ily-text">ily</span>
-        </div>
-        <div class="header-center">
-            <router-link to="/" class="nav-link">Home</router-link>
-            <router-link to="/game" class="nav-link">Game</router-link>
-            <router-link to="/profile" class="nav-link">Profile</router-link>
-            <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
-            <router-link to="/login" class="nav-link">Login</router-link>
-            <router-link to="/register" class="nav-link">Register</router-link>
-        </div>
-        <div class="header-right">
-            <router-link to="/profile">
-                <button class="profile-btn" aria-label="Profile"></button>
-            </router-link>
-        </div>
-    </nav>
+  <nav class="main-header">
+    <div class="header-left">
+      <span class="ily-text">ily</span>
+    </div>
+
+    <div class="header-center">
+      <router-link to="/" class="nav-link">Home</router-link>
+      <router-link to="/game" class="nav-link">Game</router-link>
+      <template v-if="isLoggedIn">
+        <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
+      </template>
+      <template v-else>
+        <router-link to="/login" class="nav-link">Login</router-link>
+        <router-link to="/register" class="nav-link">Register</router-link>
+      </template>
+    </div>
+
+    <div class="header-right" @mouseenter="showPopup(true)" @mouseleave="showPopup(false)">
+      <img :src="user.avatar || defaultAvatar" alt="Profile"
+        class="w-10 h-10 rounded-full object-cover border-2 border-purple-500 cursor-pointer" />
+
+      <!-- Popup Card -->
+      <div class="card-content" v-show="popupVisible">
+        <router-link to="/profile" class="text-purple-600 hover:text-purple-800 font-semibold">Mein Profil</router-link>
+        <router-link to="/logout" class="text-purple-600 hover:text-purple-800 font-semibold">Logout</router-link>
+      </div>
+    </div>
+  </nav>
 </template>
 
 
+<script setup>
+import { ref, onMounted } from 'vue'
+import { supabase } from '../supabase'
 
+const isLoggedIn = ref(false)
+
+const user = ref({
+  id: '',
+  user_name: '',
+  avatar: ''
+})
+
+const popupVisible = ref(false)
+
+const showPopup = (value) => {
+  popupVisible.value = value
+}
+
+
+const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
+
+onMounted(async () => {
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  isLoggedIn.value = !!currentUser
+
+  if (currentUser) {
+    // Lade Profil aus der 'profiles' Tabelle
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('user_name, profile_pictures')
+      .eq('user_id', currentUser.id)
+      .single()
+
+    if (!error && profile) {
+      user.value.id = currentUser.id
+      user.value.user_name = profile.user_name
+      user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
+    }
+  }
+})
+</script>
 
 <style scoped>
+.header-right {
+  position: relative; /* popup wird relativ zum Bild positioniert */
+}
+
+.card-content {
+  position: absolute;
+  top: 100%;  /* direkt unter dem Bild */
+  right: 0;   /* rechtsbündig */
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 1rem;
+  gap: 0.5rem;
+  width: 200px;
+  z-index: 50;
+}
+
+
+
+
 .main-header {
   width: 100%;
   min-height: 64px;
@@ -31,13 +103,15 @@
   justify-content: space-between;
   padding: 0 2rem;
   background: linear-gradient(90deg, #7f5af0 0%, #0ea5e9 100%);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
+
 .header-left {
   flex: 1;
   display: flex;
   align-items: center;
 }
+
 .ily-text {
   font-family: 'Montserrat', Arial, sans-serif;
   font-size: 1.7rem;
@@ -45,12 +119,14 @@
   color: #fff;
   letter-spacing: 0.1em;
 }
+
 .header-center {
   flex: 2;
   display: flex;
   justify-content: center;
   gap: 2.5rem;
 }
+
 .nav-link {
   color: #fff;
   font-family: 'Montserrat', Arial, sans-serif;
@@ -63,45 +139,34 @@
   border-radius: 0.5rem;
   transition: background 0.2s, color 0.2s;
 }
+
 .nav-link:hover {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
   color: #0ea5e9;
 }
+
 .header-right {
   flex: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
 }
-.profile-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7f5af0 60%, #0ea5e9 100%);
-  border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-.profile-btn:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
+
 @media (max-width: 700px) {
   .main-header {
     flex-direction: column;
     padding: 0.5rem 0.5rem;
     min-height: 80px;
   }
+
   .header-center {
     gap: 1rem;
     font-size: 1rem;
   }
+
   .ily-text {
     font-size: 1.2rem;
   }
-  .profile-btn {
-    width: 32px;
-    height: 32px;
-  }
+
 }
 </style>
