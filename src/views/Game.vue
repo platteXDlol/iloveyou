@@ -32,10 +32,10 @@
                         <p class="text-lg text-gray-800">{{ currentTask }}</p>
                     </div>
                     <div class="flex gap-4">
-                        <button @click="handleDone" class="py-2 px-6 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors">Done</button>
-                        <button @click="handleDifferentTask" class="py-2 px-6 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors">Different Task</button>
+                        <button @click="handleDone" class="py-2 px-6 bg-purple-500 text-white rounded-xl font-bold shadow-md hover:bg-purple-600 transition-all">Done</button>
+                        <button @click="handleDifferentTask" class="py-2 px-6 bg-blue-500 text-white rounded-xl font-bold shadow-md hover:bg-blue-600 transition-all">Different Task</button>
                     </div>
-                    <button @click="backToLevels" class="text-sm text-gray-500 hover:text-purple-500 mt-4">Back to Levels</button>
+                    <button @click="backToLevels" class="mt-4 py-2 px-6 border border-gray-500 text-gray-500 rounded-xl font-semibold shadow hover:bg-gray-500 hover:text-white transition-all">Back to Levels</button>
                 </div>
 
                 <!-- Level Selection View -->
@@ -46,7 +46,11 @@
                             v-for="levelNumber in totalLevels"
                             :key="levelNumber"
                             @click="selectLevel(levelNumber)"
-                            class="py-3 px-8 bg-purple-500 text-white rounded-lg font-bold text-lg hover:bg-purple-600 transition-colors shadow-md"
+                            :class="[
+                                'py-3 px-8 rounded-lg font-bold text-lg transition-colors shadow-md',
+                                isLevelUnlocked(levelNumber) ? 'bg-purple-500 text-white hover:bg-purple-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            ]"
+                            :disabled="!isLevelUnlocked(levelNumber)"
                         >
                             Level {{ levelNumber }}
                         </button>
@@ -54,7 +58,7 @@
                 </div>
             </template>
 
-            <button @click="restartGame" class="mt-6 text-sm text-red-500 hover:text-red-700">Restart Game</button>
+            <button @click="restartGame" class="mt-6 text-sm text-red-500 hover:underline cursor-pointer">Restart Game</button>
         </div>
     </div>
 </template>
@@ -69,6 +73,7 @@ const {
     totalLevels,
     activeLevel,
     tasksCompletedThisLevel,
+    completedTasks, // Make sure to get this from the composable
     currentTask,
     loading,
     error,
@@ -79,6 +84,13 @@ const {
     handleDone,
     handleDifferentTask,
 } = useGame();
+
+// Function to check if a level is unlocked
+const isLevelUnlocked = (levelNumber) => {
+    if (levelNumber === 1) return true; // Level 1 is always unlocked
+    // Check if the previous level is completed (4 tasks done)
+    return (completedTasks[levelNumber - 1] || 0) >= 4;
+};
 </script>
 
 <style scoped>

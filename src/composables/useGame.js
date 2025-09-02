@@ -16,6 +16,8 @@ export function useGame() {
     const totalLevels = 5;
     const activeLevel = ref(null); // The level number currently being played, e.g., 1, 2, ...
     const tasksCompletedThisLevel = ref(0);
+    const completedTasks = reactive({});
+
 
     // Task Management
     const tasksForCurrentLevel = ref([]);
@@ -74,9 +76,14 @@ export function useGame() {
         activeLevel.value = null;
         tasksCompletedThisLevel.value = 0;
         currentTask.value = '';
+        Object.keys(completedTasks).forEach(key => delete completedTasks[key]);
     }
 
     async function selectLevel(levelNumber) {
+        if (levelNumber > 1 && (completedTasks[levelNumber - 1] || 0) < 4) {
+            alert(`Complete Level ${levelNumber - 1} to unlock this level.`);
+            return;
+        }
         activeLevel.value = levelNumber;
         tasksCompletedThisLevel.value = 0;
         await fetchTasksForLevel(levelNumber);
@@ -89,9 +96,14 @@ export function useGame() {
 
     function handleDone() {
         tasksCompletedThisLevel.value++;
+        if (!completedTasks[activeLevel.value]) {
+            completedTasks[activeLevel.value] = 0;
+        }
+        completedTasks[activeLevel.value]++;
+
         if (tasksCompletedThisLevel.value >= 4) {
             // Level complete, go back to level selection
-            activeLevel.value = null; 
+            activeLevel.value = null;
         } else {
             // Next task
             switchPlayer();
@@ -111,6 +123,7 @@ export function useGame() {
         totalLevels,
         activeLevel,
         tasksCompletedThisLevel, // For the UI: "Task X of 4"
+        completedTasks,
         currentTask,
         loading,
         error,
