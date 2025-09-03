@@ -23,8 +23,8 @@
 
         <!-- Popup Card -->
         <div class="card-content" v-show="popupVisible">
-          <router-link to="/profile" class="popup-item">Mein Profil</router-link>
-          <button @click="logout" class="popup-item">Logout</button>
+          <router-link to="/profile" class="popup-button">Mein Profil</router-link>
+          <button @click="logout" class="popup-button">Logout</button>
         </div>
       </div>
   </template>
@@ -35,7 +35,7 @@
 
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
 
 const isLoggedIn = ref(false)
@@ -60,14 +60,12 @@ const logout = async () => {
 }
 
 
-
-supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log(event, session)
-  const currentUser = session?.user
-
+onMounted(async () => {
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
   isLoggedIn.value = !!currentUser
 
   if (currentUser) {
+    // Lade Profil aus der 'profiles' Tabelle
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('user_name, profile_pictures')
@@ -77,10 +75,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     if (!error && profile) {
       user.value.id = currentUser.id
       user.value.user_name = profile.user_name
-      user.value.avatar = profile.profile_pictures
+      user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
     }
-  } else {
-    user.value = { id: '', user_name: '', avatar: '' }
   }
 })
 </script>
@@ -108,26 +104,26 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   z-index: 50;
 }
 
-.popup-item {
+.popup-button {
   display: block;
-  padding: 0.5rem 1rem;
-  color: #4a4a4a;
-  text-decoration: none;
-  border-radius: 0.5rem;
-  transition: background-color 0.2s, color 0.2s;
-  text-align: left;
   width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.popup-item:hover {
-  background-color: #f0f0f0;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
   color: #7f5af0;
+  border: none;
+  border-radius: 0.5rem;
+  text-align: left;
+  text-decoration: none;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
 }
 
+.popup-button:hover {
+  background-color: #f0f0f0;
+  color: #6a48d7;
+}
 
 .main-header {
   width: 100%;
