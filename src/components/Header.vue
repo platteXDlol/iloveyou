@@ -1,7 +1,7 @@
 <template>
   <nav class="main-header">
     <div class="header-left">
-      <span class="ily-text">ily</span>
+      <router-link to="/" class="ily-text">ily</router-link>
     </div>
 
     <div class="header-center">
@@ -15,23 +15,27 @@
         <router-link to="/register" class="nav-link">Register</router-link>
       </template>
     </div>
+    <div class="header-right">
+      <template v-if="isLoggedIn">
+      <div @mouseenter="showPopup(true)" @mouseleave="showPopup(false)">
+        <img :src="user.avatar || defaultAvatar" alt="Profile"
+          class="w-10 h-10 rounded-full object-cover border-2 border-purple-500 cursor-pointer" />
 
-    <div class="header-right" @mouseenter="showPopup(true)" @mouseleave="showPopup(false)">
-      <img :src="user.avatar || defaultAvatar" alt="Profile"
-        class="w-10 h-10 rounded-full object-cover border-2 border-purple-500 cursor-pointer" />
-
-      <!-- Popup Card -->
-      <div class="card-content" v-show="popupVisible">
-        <router-link to="/profile" class="text-purple-600 hover:text-purple-800 font-semibold">Mein Profil</router-link>
-        <router-link to="/logout" class="text-purple-600 hover:text-purple-800 font-semibold">Logout</router-link>
+        <!-- Popup Card -->
+        <div class="card-content" v-show="popupVisible">
+          <router-link to="/profile" class="popup-item">Mein Profil</router-link>
+          <button @click="logout" class="popup-item">Logout</button>
+        </div>
       </div>
+  </template>
     </div>
-  </nav>
+
+</nav>
 </template>
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { supabase } from '../supabase'
 
 const isLoggedIn = ref(false)
@@ -43,20 +47,27 @@ const user = ref({
 })
 
 const popupVisible = ref(false)
+const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
+
 
 const showPopup = (value) => {
   popupVisible.value = value
 }
 
+const logout = async () => {
+  await supabase.auth.signOut()
+  window.location.href = '/'  // Redirect to home after logout
+}
 
-const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
 
-onMounted(async () => {
-  const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log(event, session)
+  const currentUser = session?.user
+
   isLoggedIn.value = !!currentUser
 
   if (currentUser) {
-    // Lade Profil aus der 'profiles' Tabelle
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('user_name, profile_pictures')
@@ -66,33 +77,56 @@ onMounted(async () => {
     if (!error && profile) {
       user.value.id = currentUser.id
       user.value.user_name = profile.user_name
-      user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
+      user.value.avatar = profile.profile_pictures
     }
+  } else {
+    user.value = { id: '', user_name: '', avatar: '' }
   }
 })
 </script>
 
 <style scoped>
 .header-right {
-  position: relative; /* popup wird relativ zum Bild positioniert */
+  position: relative;
+  /* popup wird relativ zum Bild positioniert */
 }
 
 .card-content {
   position: absolute;
-  top: 100%;  /* direkt unter dem Bild */
-  right: 0;   /* rechtsbündig */
+  top: 100%;
+  /* direkt unter dem Bild */
+  right: 0;
+  /* rechtsbündig */
   display: flex;
   flex-direction: column;
   background: white;
   border-radius: 1rem;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   padding: 1rem;
   gap: 0.5rem;
   width: 200px;
   z-index: 50;
 }
 
+.popup-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #4a4a4a;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
+  text-align: left;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
 
+.popup-item:hover {
+  background-color: #f0f0f0;
+  color: #7f5af0;
+}
 
 
 .main-header {
