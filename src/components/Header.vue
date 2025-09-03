@@ -60,24 +60,28 @@ const logout = async () => {
 }
 
 
-onMounted(async () => {
-  const { data: { user: currentUser } } = await supabase.auth.getUser()
-  isLoggedIn.value = !!currentUser
+onMounted(() => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    const currentUser = session?.user
+    isLoggedIn.value = !!currentUser
 
-  if (currentUser) {
-    // Lade Profil aus der 'profiles' Tabelle
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('user_name, profile_pictures')
-      .eq('user_id', currentUser.id)
-      .single()
+    if (currentUser) {
+      // Lade Profil aus der 'profiles' Tabelle
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('user_name, profile_pictures')
+        .eq('user_id', currentUser.id)
+        .single()
 
-    if (!error && profile) {
-      user.value.id = currentUser.id
-      user.value.user_name = profile.user_name
-      user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
+      if (!error && profile) {
+        user.value.id = currentUser.id
+        user.value.user_name = profile.user_name
+        user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
+      }
+    } else {
+      user.value = { id: '', user_name: '', avatar: '' }
     }
-  }
+  })
 })
 </script>
 
