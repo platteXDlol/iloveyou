@@ -27,26 +27,11 @@
     import Header from './components/Header.vue';
     import Footer from './components/Footer.vue';
 
-    import { supabase } from './supabase';
-
     export default {
       name: 'App',
       components: {
         Header,
         Footer
       },
-      data() {
-        return {
-          session: null
-        }
-      },
-      mounted() {
-        supabase.auth.getSession().then(({ data }) => {
-          this.session = data.session;
-        });
-      supabase.auth.onAuthStateChange((_event, session) => {
-        this.session = session;
-      });
-    }
-  };
+    };
 </script>

@@ -140,11 +140,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const session = inject('session')
 
 // Reactive data
 const user = ref({
@@ -185,11 +186,9 @@ onMounted(async () => {
 async function loadUserProfile() {
     try {
         loading.value = true
+        const currentUser = session.user
         
-        // Get current user
-        const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
-        
-        if (authError || !currentUser) {
+        if (!currentUser) {
             router.push('/login')
             return
         }
@@ -226,11 +225,9 @@ async function loadUserProfile() {
 async function saveProfile() {
     try {
         saving.value = true
+        const currentUser = session.user
         
-        // Get current user
-        const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
-        
-        if (authError || !currentUser) {
+        if (!currentUser) {
             router.push('/login')
             return
         }
@@ -294,9 +291,9 @@ async function onFileChange(event) {
     }
     
     try {
-        const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
+        const currentUser = session.user
         
-        if (authError || !currentUser) {
+        if (!currentUser) {
             router.push('/login')
             return
         }

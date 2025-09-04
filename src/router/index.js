@@ -6,6 +6,7 @@ import Profile from '../views/Profile.vue';
 import Game from '../views/Game.vue';
 import Register from '../views/Register.vue';
 import Login from '../views/Login.vue';
+import { supabase } from '../supabase';
 
 const routes = [
   {
@@ -17,11 +18,13 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true },
   },
   {
     path: '/profile',
     name: 'Profile',
     component: Profile,
+    meta: { requiresAuth: true },
   },
   {
     path: '/game',
@@ -43,6 +46,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// Navigation guard
+router.beforeEach(async (to, from, next) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+  if (requiresAuth && !session) {
+    next('/login');
+  } else {
+    next();
+  }
 });
 
 export default router;

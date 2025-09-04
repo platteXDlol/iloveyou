@@ -35,11 +35,14 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, inject, onUnmounted } from 'vue'
 import { supabase } from '../supabase'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const session = inject('session')
 
 const isLoggedIn = ref(false)
-
 const user = ref({
   id: '',
   user_name: '',
@@ -48,7 +51,7 @@ const user = ref({
 
 const popupVisible = ref(false)
 const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
-
+let profileSubscription = null
 
 const showPopup = (value) => {
   popupVisible.value = value
@@ -56,32 +59,74 @@ const showPopup = (value) => {
 
 const logout = async () => {
   await supabase.auth.signOut()
-  window.location.href = '/'  // Redirect to home after logout
+  router.push('/') // Redirect to home after logout
 }
 
-
-onMounted(() => {
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    const currentUser = session?.user
-    isLoggedIn.value = !!currentUser
-
-    if (currentUser) {
-      // Lade Profil aus der 'profiles' Tabelle
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('user_name, profile_pictures')
-        .eq('user_id', currentUser.id)
-        .single()
-
-      if (!error && profile) {
-        user.value.id = currentUser.id
-        user.value.user_name = profile.user_name
-        user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
-      }
-    } else {
-      user.value = { id: '', user_name: '', avatar: '' }
+// Function to fetch user profile
+const fetchUserProfile = async (currentUser) => {
+  if (!currentUser) {
+    isLoggedIn.value = false
+    user.value = { id: '', user_name: '', avatar: '' }
+    if (profileSubscription) {
+      supabase.removeChannel(profileSubscription)
+      profileSubscription = null
     }
-  })
+    return
+  }
+
+  isLoggedIn.value = true
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('user_name, profile_pictures')
+    .eq('user_id', currentUser.id)
+    .single()
+
+  if (!error && profile) {
+    user.value.id = currentUser.id
+    user.value.user_name = profile.user_name
+    user.value.avatar = profile.profile_pictures
+  }
+
+  // Subscribe to real-time updates
+  if (!profileSubscription) {
+    console.log('Subscribing to profile updates for user:', currentUser.id)
+    profileSubscription = supabase
+      .channel(`profile:${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${currentUser.id}` },
+        (payload) => {
+          console.log('Real-time update received:', payload)
+          if (payload.new) {
+            user.value.avatar = payload.new.profile_pictures
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to profile updates!')
+        } else {
+          console.error('Failed to subscribe to profile updates:', err)
+        }
+      })
+  }
+}
+
+// Watch for changes in the session and update the user profile
+watch(
+  () => session.user,
+  (newUser) => {
+    fetchUserProfile(newUser)
+  },
+  { immediate: true } // Fetch profile immediately when the component is mounted
+)
+
+// Unsubscribe on component unmount
+onUnmounted(() => {
+  if (profileSubscription) {
+    console.log('Unsubscribing from profile updates.')
+    supabase.removeChannel(profileSubscription)
+  }
 })
 </script>
 
