@@ -61,28 +61,39 @@ const logout = async () => {
 
 
 onMounted(() => {
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    const currentUser = session?.user
-    isLoggedIn.value = !!currentUser
+  fetchUserProfile()
 
-    if (currentUser) {
-      // Lade Profil aus der 'profiles' Tabelle
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('user_name, profile_pictures')
-        .eq('user_id', currentUser.id)
-        .single()
-
-      if (!error && profile) {
-        user.value.id = currentUser.id
-        user.value.user_name = profile.user_name
-        user.value.avatar = profile.profile_pictures // Das ist der URL zum Bild
-      }
-    } else {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      fetchUserProfile()
+    } else if (event === 'SIGNED_OUT') {
+      isLoggedIn.value = false
       user.value = { id: '', user_name: '', avatar: '' }
     }
   })
 })
+
+const fetchUserProfile = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session) {
+    const currentUser = session.user
+    isLoggedIn.value = true
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('user_name, profile_pictures')
+      .eq('user_id', currentUser.id)
+      .single()
+
+    if (!error && profile) {
+      user.value.id = currentUser.id
+      user.value.user_name = profile.user_name
+      user.value.avatar = profile.profile_pictures
+    }
+  } else {
+    isLoggedIn.value = false
+  }
+}
 
 const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
 </script>
