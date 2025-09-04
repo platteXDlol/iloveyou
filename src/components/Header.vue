@@ -47,7 +47,7 @@ const user = ref({
 })
 
 const popupVisible = ref(false)
-const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
+
 
 
 const showPopup = (value) => {
@@ -83,6 +83,8 @@ onMounted(() => {
     }
   })
 })
+
+const defaultAvatar = 'https://i.pinimg.com/736x/8c/14/9b/8c149bfad0dfc0366e70b97f679bd170.jpg'
 </script>
 
 <style scoped>
