@@ -1,5 +1,6 @@
 <template>
   <div id="app" class="app-layout bg-gray-100">
+    <Header />
     <main class="main-content">
       <router-view />
     </main>
@@ -17,17 +18,19 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-bottom: 6rem; /* Add padding to avoid footer overlap */
+  padding-bottom: 6rem;
 }
 </style>
 
 <script>
     import Footer from './components/Footer.vue';
+    import Header from './components/Header.vue';
 
     export default {
       name: 'App',
       components: {
-        Footer
+        Footer,
+        Header
       },
     };
 </script>
