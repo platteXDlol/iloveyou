@@ -20,14 +20,3 @@
 }
 </style>
 
-
-
-<script>
-    export default {
-      name: 'App',
-      components: {
-        Header,
-        Footer
-      },
-    };
-</script>
