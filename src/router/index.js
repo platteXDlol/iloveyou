@@ -1,5 +1,6 @@
 
 import { createRouter, createWebHistory } from 'vue-router';
+
 import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
@@ -7,8 +8,13 @@ import Dashboard from '../views/Dashboard.vue';
 import Profile from '../views/Profile.vue';
 import AddPartner from '../views/AddPartner.vue';
 import PartnerProfile from '../views/PartnerProfile.vue';
+
 import Games from '../views/Games.vue';
+import Overview from '../components/games/Overview.vue';
+import Forplay from '../components/games/Forplay.vue';
+
 import { supabase } from '../supabase';
+
 
 const routes = [
   {
@@ -30,6 +36,18 @@ const routes = [
     path: '/games',
     name: 'Games',
     component: Games,
+    children: [
+      {
+        path: '',
+        name: 'Overview',
+        component: Overview,
+      },
+      {
+        path: 'forplay',
+        name: 'Forplay',
+        component: Forplay,
+      },
+    ],
   },
   {
     path: '/dashboard',
