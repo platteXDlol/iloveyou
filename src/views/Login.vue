@@ -67,9 +67,63 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { supabase } from '../supabase';
 
 const errorMessage = ref('');
 const fieldErrors = ref({});
 const loginInput = ref('');
+const loading = ref(false);
+const password = ref('');
+const router = useRouter();
+
+function validateForm() {
+  fieldErrors.value = {};
+  let valid = true;
+
+  if (!loginInput.value.trim()) {
+    fieldErrors.value.loginInput = 'Bitte gib deinen Benutzernamen oder deine E-Mail ein.';
+    valid = false;
+  }
+
+  if (!password.value) {
+    fieldErrors.value.password = 'Bitte gib dein Passwort ein.';
+    valid = false;
+  }
+
+  return valid;
+}
+
+const handleLogin = async () => {
+  if (!validateForm()) return;
+
+  loading.value = true;
+  errorMessage.value = '';
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginInput.value.includes('@') ? loginInput.value : undefined,
+      password: password.value,
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.user) {
+      router.push('/dashboard');
+    }
+  } 
+  catch (error) {
+    console.error('Login error:', error);
+    errorMessage.value = 'Anmeldung fehlgeschlagen. Bitte überprüfe deine Eingaben.';
+  } 
+  finally {
+    loading.value = false;
+  }
+};
 
 </script>
