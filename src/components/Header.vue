@@ -34,10 +34,119 @@
 </template>
 
 
+<script setup>
+import { ref, watch, inject, onUnmounted } from 'vue'
+import { supabase } from '../supabase'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const session = inject('session')
+
+const isLoggedIn = ref(false)
+const user = ref({
+  id: '',
+  username: '',
+  profile_picture: ''
+})
+
+
+const forceRefreshProfile = async () => {
+  if (session.user) {
+    await fetchUserProfile(session.user)
+  }
+}
+
+const handleForceRefresh = () => {
+  forceRefreshProfile()
+}
+
+window.addEventListener('forceProfileRefresh', handleForceRefresh)
+
+const popupVisible = ref(false)
+const defaultAvatar = '../assets/default-avatar.png'
+let profileSubscription = null
+
+const showPopup = (value) => {
+  popupVisible.value = value
+}
+
+const logout = async () => {
+  await supabase.auth.signOut()
+  router.push('/')
+}
+
+
+const fetchUserProfile = async (currentUser) => {
+  if (!currentUser) {
+    isLoggedIn.value = false
+    user.value = { id: '', username: '', profile_picture: '' }
+    if (profileSubscription) {
+      supabase.removeChannel(profileSubscription)
+      profileSubscription = null
+    }
+    return
+  }
+
+  isLoggedIn.value = true
+  const { data: profile, error } = await supabase
+    .from('users')
+    .select('username, profile_picture')
+    .eq('user_id', currentUser.id)
+    .single()
+
+  if (!error && profile) {
+    user.value.id = currentUser.id
+    user.value.username = profile.username
+    user.value.profile_picture = profile.profile_picture
+  }
+
+
+  if (!profileSubscription) {
+    console.log('Subscribing to profile updates for user:', currentUser.id)
+    profileSubscription = supabase
+      .channel(`profile:${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `user_id=eq.${currentUser.id}` },
+        (payload) => {
+          console.log('Real-time update received:', payload)
+          if (payload.new) {
+            user.value.profile_picture = payload.new.profile_picture
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to profile updates!')
+        } else {
+          console.error('Failed to subscribe to profile updates:', err)
+        }
+      })
+  }
+}
+
+// Watch for changes in the session and update the user profile
+watch(
+  () => session.user,
+  (newUser) => {
+    fetchUserProfile(newUser)
+  },
+  { immediate: true } // Fetch profile immediately when the component is mounted
+)
+
+// Unsubscribe on component unmount
+onUnmounted(() => {
+  if (profileSubscription) {
+    console.log('Unsubscribing from profile updates.')
+    supabase.removeChannel(profileSubscription)
+  }
+})
+</script>
+
+
 <style scoped>
 .header-right {
   position: relative;
-  /* popup wird relativ zum Bild positioniert */
 }
 
 .header-logo {
