@@ -6,7 +6,7 @@
 
     <div class="header-center">
       <router-link to="/" class="nav-link">Home</router-link>
-      <router-link to="/game" class="nav-link">Game</router-link>
+      <router-link to="/games" class="nav-link">Game</router-link>
       <template v-if="isLoggedIn">
         <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
       </template>
