@@ -13,6 +13,7 @@
         {{ errorMessage }}
       </div>
       
+      <!-- Registrierung -->
       <form @submit.prevent="handleSignUp" class="flex flex-col gap-4">
         <div>
           <input 
@@ -96,7 +97,8 @@
           </button>
         </div>
       </form>
-      
+
+      <!-- bereits registriert?  -->
       <div class="text-center">
         <p class="text-gray-600 text-sm">
           Bereits registriert? 
@@ -109,6 +111,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { supabase } from '../supabase'
 
 const email = ref('')
 const password = ref('')
@@ -119,6 +122,80 @@ const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const fieldErrors = ref({})
+
+function validateForm() {
+  errorMessage.value = ''
+  successMessage.value = ''
+  fieldErrors.value = {}
+
+  if (!first_name.value) fieldErrors.value.first_name = 'Vorname ist erforderlich.'
+  if (!last_name.value) fieldErrors.value.last_name = 'Nachname ist erforderlich.'
+  if (!username.value) fieldErrors.value.username = 'Benutzername ist erforderlich.'
+  if (!email.value) fieldErrors.value.email = 'E-Mail ist erforderlich.'
+  if (!password.value || password.value.length < 6) fieldErrors.value.password = 'Passwort muss mindestens 6 Zeichen lang sein.'
+
+  return Object.keys(fieldErrors.value).length === 0
+}
+
+async function handleSignUp() {
+  if (!validateForm()) return
+
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+  
+    const { data, error } = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value,
+      options: {
+        data: {
+          first_name: first_name.value,
+          last_name: last_name.value,
+          username: username.value
+        }
+      }
+    })
+
+    if (error) throw error
+
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+      errorMessage.value = 'Diese E-Mail-Adresse ist bereits registriert. Bitte melde dich an.';
+      return; 
+    }
+
+    successMessage.value = 'Registrierung erfolgreich! Bitte überprüfe deine E-Mails zur Bestätigung.'
+
+    // Formular zurücksetzen
+    email.value = ''
+    password.value = ''
+    first_name.value = ''
+    last_name.value = ''
+    username.value = ''
+}
+  catch (error) {
+    console.error('Registrierungsfehler:', error)
+    
+    // Fehlerbehandlung basierend auf Supabase-Fehlermeldungen
+    switch (error.code) {
+      case '23505': // PostgreSQL unique_violation
+        errorMessage.value = 'Dieser Benutzername oder diese E-Mail ist bereits vergeben.';
+        break;
+      case 'invalid_email':
+        errorMessage.value = 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        break;
+      case 'invalid_password':
+        errorMessage.value = 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+        break;
+      default:
+        errorMessage.value = 'Registrierung fehlgeschlagen. Bitte versuche es erneut.';
+}
+  } 
+  finally {
+    loading.value = false
+  }
+}
 
 
 </script>
