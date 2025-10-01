@@ -62,7 +62,7 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/add-partner',
+    path: '/addpartner',
     name: 'AddPartner',
     component: AddPartner,
     meta: { requiresAuth: true },
